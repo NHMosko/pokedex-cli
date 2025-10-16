@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/nhmosko/pokedexcli/internal/pokecache"
 )
+
+var globalCache *pokecache.Cache
 
 func main() {
 	initMap()
 	scanner := bufio.NewScanner(os.Stdin)
+	globalCache = pokecache.NewCache(5 * time.Second)
 
 	for {
 		fmt.Print("Pokedex > ")
@@ -21,13 +27,17 @@ func main() {
 		}
 
 		inputCommand := inputWords[0]
+		argument := ""
+		if len(inputWords) > 1 {
+			argument = inputWords[1]
+		}
 
 		cmd, ok := allCommands[inputCommand]
 		if !ok {
 			fmt.Println("Unknown command")
 			continue
 		}
-		cmd.callback()
+		cmd.callback(argument)
 	}
 }
 
