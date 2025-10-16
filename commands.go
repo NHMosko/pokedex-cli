@@ -17,41 +17,52 @@ type cliCommand struct {
 
 var allCommands = map[string]cliCommand{}
 
+
 func initMap() {
 	allCommands["exit"] = cliCommand{
-		name:        "exit",
+		name:        "x - exit",
 		description: "Exits the Pokedex",
 		callback:    exitCommand,
 	}
 	allCommands["help"] = cliCommand{
-		name:        "help",
+		name:        "h - help",
 		description: "Explains how to use the Pokedex",
 		callback:    helpCommand,
 	}
 	allCommands["map"] = cliCommand{
-		name:        "map",
+		name:        "m - map",
 		description: "Displays next 20 Pokemon areas",
 		callback:    mapCommand,
 	}
 	allCommands["mapb"] = cliCommand{
-		name:        "mapb",
+		name:        "b - mapb",
 		description: "Displays previous 20 Pokemon areas",
 		callback:    mapbCommand,
 	}
 	allCommands["explore"] = cliCommand{
-		name:        "explore",
+		name:        "e - explore",
 		description: "Displays all Pokemon located at the selected area",
 		callback:    exploreCommand,
 	}
 	allCommands["catch"] = cliCommand{
-		name:        "catch",
+		name:        "c - catch",
 		description: "Attempts to catch the selected pokemon",
 		callback:    catchCommand,
 	}
 	allCommands["inspect"] = cliCommand{
-		name:        "inspect",
+		name:        "i - inspect",
 		description: "Gives information about a caught pokemon",
 		callback:    inspectCommand,
+	}
+	allCommands["pokedex"] = cliCommand{
+		name:        "p - pokedex",
+		description: "Shows all caught pokemon",
+		callback:    pokedexCommand,
+	}
+	allCommands["again"] = cliCommand{
+		name:        "a - again",
+		description: "Repeats last command",
+		callback:    againCommand,
 	}
 
 	caughtPokemon = make(map[string]Pokemon)
@@ -196,6 +207,11 @@ type SpecificAreaResponse struct {
 var caughtPokemon map[string]Pokemon
 
 func exploreCommand(areaName string) error {
+	if areaName == "" {
+		fmt.Println("Specify which area to explore")
+		return fmt.Errorf("No area given")
+	}
+
 	fullUrl := "https://pokeapi.co/api/v2/location-area/" + areaName
 
 	jsonData, err := getHTTPResponse(fullUrl)
@@ -216,6 +232,11 @@ func exploreCommand(areaName string) error {
 }
 
 func catchCommand(pokemonName string) error {
+	if pokemonName == "" {
+		fmt.Println("Specify which pokemon to catch")
+		return fmt.Errorf("No pokemon given")
+	}
+
 	fullUrl := "https://pokeapi.co/api/v2/pokemon/" + pokemonName
 
 	jsonData, err := getHTTPResponse(fullUrl)
@@ -225,6 +246,7 @@ func catchCommand(pokemonName string) error {
 
 	var pokemon Pokemon
 	if err := json.Unmarshal(jsonData, &pokemon); err != nil {
+		fmt.Printf("%v might not be a pokemon\n")
 		return err
 	}	
 
@@ -239,6 +261,11 @@ func catchCommand(pokemonName string) error {
 }
 
 func inspectCommand(pokemonName string) error {
+	if pokemonName == "" {
+		fmt.Println("Specify which pokemon to inspect")
+		return fmt.Errorf("No pokemon given")
+	}
+
 	pokemon, ok := caughtPokemon[pokemonName]
 	if !ok {
 		fmt.Println("You have not caught that pokemon")
@@ -257,5 +284,26 @@ func inspectCommand(pokemonName string) error {
 		fmt.Printf("- %s\n", pokeType.Type.Name)
 	}
 
+	return nil
+}
+
+func pokedexCommand(string) error {
+	if len(caughtPokemon) == 0 {
+		fmt.Println("Empty... use 'catch' to get new pokemon")
+		return nil
+	}
+	fmt.Println("Your Pokedex:")
+	for k, _ := range caughtPokemon {
+		fmt.Println("-", k)
+	}
+	return nil
+}
+
+func againCommand(string) error {
+	err := lastCommand(lastArgument)
+	if err != nil {
+		fmt.Println("Failed to repeat command")
+		return err
+	}
 	return nil
 }

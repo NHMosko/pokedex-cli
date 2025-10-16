@@ -11,6 +11,8 @@ import (
 )
 
 var globalCache *pokecache.Cache
+var lastCommand func(string) error
+var lastArgument string
 
 func main() {
 	initMap()
@@ -27,6 +29,27 @@ func main() {
 		}
 
 		inputCommand := inputWords[0]
+		switch inputCommand {
+		case "x":
+			inputCommand = "exit"
+		case "h":
+			inputCommand = "help"
+		case "m":
+			inputCommand = "map"
+		case "b":
+			inputCommand = "mapb"
+		case "e":
+			inputCommand = "explore"
+		case "c":
+			inputCommand = "catch"
+		case "p":
+			inputCommand = "pokedex"
+		case "a":
+			inputCommand = "again"
+		case "i":
+			inputCommand = "inspect"
+		}
+
 		argument := ""
 		if len(inputWords) > 1 {
 			argument = inputWords[1]
@@ -37,6 +60,12 @@ func main() {
 			fmt.Println("Unknown command")
 			continue
 		}
+
+		if inputCommand != "again" {
+			lastCommand = cmd.callback
+			lastArgument = argument
+		}
+		
 		cmd.callback(argument)
 	}
 }
