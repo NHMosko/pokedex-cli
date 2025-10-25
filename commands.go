@@ -1,12 +1,13 @@
 package main
 
 import (
-	"math/rand/v2"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type cliCommand struct {
@@ -101,7 +102,10 @@ type LocationResponse struct {
 
 var locationResponse LocationResponse
 
+var explorableLocations []string
+
 func mapCommand(string) error {
+	explorableLocations = []string{}
 	url := "https://pokeapi.co/api/v2/location-area/"
 
 	if locationResponse.Next != nil {
@@ -116,14 +120,16 @@ func mapCommand(string) error {
 	if err := json.Unmarshal(jsonData, &locationResponse); err != nil {
 		return err
 	}
-	for _, location := range locationResponse.Results {
-		fmt.Println(location.Name)
+	for i, location := range locationResponse.Results {
+		fmt.Printf("%v- %v\n", i+1, location.Name)
+		explorableLocations = append(explorableLocations, location.Name)
 	}
 	
 	return nil
 }
 
 func mapbCommand(string) error {
+	explorableLocations = []string{}
 	url := ""
 
 	if locationResponse.Previous != nil {
@@ -141,8 +147,9 @@ func mapbCommand(string) error {
 	if err := json.Unmarshal(jsonData, &locationResponse); err != nil {
 		return err
 	}
-	for _, location := range locationResponse.Results {
-		fmt.Println(location.Name)
+	for i, location := range locationResponse.Results {
+		fmt.Printf("%v- %v\n", i+1, location.Name)
+		explorableLocations = append(explorableLocations, location.Name)
 	}
 	
 	return nil
@@ -209,7 +216,19 @@ var caughtPokemon map[string]Pokemon
 func exploreCommand(areaName string) error {
 	if areaName == "" {
 		fmt.Println("Specify which area to explore")
+		for i, e := range explorableLocations {
+			fmt.Printf("%v- %v\n", i+1, e)
+		}
 		return fmt.Errorf("No area given")
+	}
+
+	areaNum, err := strconv.ParseInt(areaName, 0, 64)
+	if err == nil {
+		if len(explorableLocations) == 0 {
+			fmt.Println("Try running the map command before exploring through numbers")
+			return fmt.Errorf("Explorable locations empty")
+		}
+		areaName = explorableLocations[areaNum - 1]
 	}
 
 	fullUrl := "https://pokeapi.co/api/v2/location-area/" + areaName
@@ -246,7 +265,7 @@ func catchCommand(pokemonName string) error {
 
 	var pokemon Pokemon
 	if err := json.Unmarshal(jsonData, &pokemon); err != nil {
-		fmt.Printf("%v might not be a pokemon\n")
+		fmt.Printf("This might not be a pokemon\n")
 		return err
 	}	
 
@@ -293,7 +312,7 @@ func pokedexCommand(string) error {
 		return nil
 	}
 	fmt.Println("Your Pokedex:")
-	for k, _ := range caughtPokemon {
+	for k := range caughtPokemon {
 		fmt.Println("-", k)
 	}
 	return nil
